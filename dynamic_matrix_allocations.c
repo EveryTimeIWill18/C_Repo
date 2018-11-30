@@ -1,94 +1,154 @@
-#include <iostream>
-#include <cmath>
-#include <cstdlib>
-#include <cstdio>
-#include <cassert>
-#include <sys/types.h>
-#include <sys/types.h>
-#include "c_matrix_preproc.hpp"
-// always do buffered read/write
-// reading/writing in larger chunks is more efficient
-
-// fopen - more efficient/less control
-// open  - less efficient/more control
+#ifndef C_ARRAY_H
+#define C_ARRAY_H
+#include <stdio.h>
+#include <stdlib.h>
+#include <assert.h>
 
 
-// function prototype
-typedef double ** (*__init__)(double **, const int, const int);
 
-typedef double * (*__init_vec__)(double *, const int);
+namespace __c_arrays__ 
+{
+    // preprocessor macro to loothrough every element in arg list
+    #define __for_each__(i, loopmax, ...) for(int i=0; i<loopmax; i++) \
+                                                    {__VA_ARGS__}
+    typedef struct __c_vec__ {
+        double *data;
+        int length;
+        int front;
+        int back;
+        int free;
+    } CVector;
 
-double **mat_init_(double **ptr, const int rows, const int cols);
+    typedef struct __c_array__ {
 
-void insert_array(double *row_arr);
+        typedef struct __array__ {
+            double *data;
+            int mem_len;
+            int free;
+            int front;
+        }__array__;
 
-double** do_operation(__init__ init_mtx, double **mtxPtr, const int rows, const int cols);
+        // __array__ methods(fucntion pointers)
+        typedef __array__ * (*__init_array__)(int len_);
+        typedef void (*arr_front_inserter)(__array__ *arr_, double value);
+        typedef void (*arr_back_inserter)(__array__ *arr_, double value);
+        typedef void (*arr_print_)(__array__ *arr_);
 
-double** create_matrix(__init__ mtx, __init_vec__ vtr, double **mtxPtr, 
-                                        const int rows, const int cols);
-
-int main(int argc, char **argv){
-
-    // command line arguments
-    argc = atoi(argv[0]);
-    // initiialize test matrix
-    int rows = atoi(argv[1]);
-    int cols = atoi(argv[2]);
-
-    // pointer to pointer to double
-    double **ptr;
-
-    // create a matrix
-    double **A = do_operation(mat_init_, ptr, rows, cols);
-    std::cout << "Hello world!" << std::endl;
-	return EXIT_SUCCESS;
-}
-
-double* insert_array(double *row_arr, const int length){
-
-    // length cannot be negative
-    assert(length >= 0);
-    row_arr = (double *)malloc(sizeof(double)*length);
-    return row_arr;
-}
-
-double **mat_init_(double **ptr, const int rows, const int cols){
+        //__array__ *arr_ = NULL; // initialize __array__
+       
+    }CArray;
     
-    // make sure rows/cols > 0
-    assert(rows > 0);
-    assert(cols > 0);
+   CArray *make_array(){
+       CArray *ARRAY = NULL;
+       ARRAY = (CArray*)malloc(sizeof(ARRAY));
+   }
 
-    // allocate memory
-    ptr = (double **)malloc(sizeof(double *)*rows);   
 
-    // for each row allocate memory
-    int i = 0;
-    while(i < rows){
-        ptr[i] = (double *)malloc(sizeof(double)*cols);
-        i += 1;
-        printf("row[%d] = %d bytes of storage.\n", i, sizeof(double)*cols);
+
+
+
+    //  __init__
+    CVector * __c_vec_init__(int len_) {
+        CVector *vec = NULL;  // initialize pointer
+        vec = (CVector*)malloc(sizeof(CVector));  // allocate memory 
+  
+        assert(len_ > 0); // len must be greater than 0
+        vec->length = len_; // initialize length of data array
+        vec->data = NULL; // initialize array pointer
+        vec->data = (double*)malloc(sizeof(double)*vec->length); // allocate memory for array
+        vec->front = 0; // first position of array
+        vec->back = (vec->length - 1);  // last position of array
+        vec->free = len_;  // free space left in array
+
+        return vec; // return pointer to CVector
+    } // initialize the vector
+
+
+    // __realloc__
+    CVector *__c_vec_realloc__(CVector *old_vec, size_t new_length) {
+        // reallocate memory to increase capacity
+        
+        /*Steps: 
+        *       first create a new CVector with incread capacity.
+        *       copy over values from old CVector to new CVector
+        *       point old CVector to new CVector.    
+        */
+        CVector *new_vec = NULL;  // initialize new CVector
+        new_vec = (CVector*)malloc(sizeof(CVector));  // allocate memory
+        
+
     }
-    return ptr;
-}
 
-double **init_matrix(double **mPtr, double *vPtr, __init_vec__ c_vector, const int length, 
-                            const int rows, const int cols){
+    //  __dealloc__
+    void __c_vec_dealloc__(CVector *v) {
+        if(v) {
+            // Not NULL
+            if(v->data) {
+                free(v->data);  // free allocated memory
+                v->data = NULL; // limit undefined behavior
+            } else {
+                printf("MemberDeallocationError: Struct membor already deallocated.\n");
+            }
+            free(v);   // free allocated memory 
+            v = NULL; // limit undefined behavior
+        } else {
+            // If NULL
+            printf("DeallocationError: Memroy already deallocated.\n");
+        }
+    }
 
-    // make sure rows/cols > 0
-    assert(rows > 0);
-    assert(cols > 0);
+    /*********************
+    * Iteration methods  *
+    **********************/
+    // insert data into CVector
+    void front_inserter(CVector *v, double value) {
+        if(v->front < v->length && v->free != 0) {
+            // insert into the data structure
+           *(v->data + v->front) = value;
+            v->front++; // increment front iterator
+            v->free--;  // decriment free storage
+        } else {
+            if(v->front == v->back) {
+                // use v->back to keep v->front < v->back
+            }
+        }
+    }
 
-    // allocate memory
-    ptr = (double **)malloc(sizeof(double *)*rows); 
-            
-
-}
+    void begin_(CVector *v, double value) {
+            // iterator 
+    }
 
 
 
 
-double** do_operation(__init__ init_mtx, double **mtxPtr, 
-            const int rows, const int cols){
-            
-        return init_mtx(mtxPtr, rows, cols);
-}
+    // insert data into the back of CVector
+    void back_inserter(CVector *v, double value) {
+        if(v->back > v->front && v->free != 0) {
+            // load data
+            *(v->data + v->back) = value;
+            v->back--;  // decriment back iterator
+            v->free--;  // decriment free storage
+        } else {
+            printf("IndexOutOfRangeError: Cannot add data into array");
+        }
+    }
+
+    /*****************
+     * print methods *
+    ******************/
+    //  get the length of the array
+    void get_length(CVector *v) {
+        printf("CVector->length = %d\n", v->length);
+    }
+
+    // get the amount of free storage in arr
+    void get_free(CVector *v) {
+        printf("Free Storage\n----------\nAmnt: %d\n", v->free);
+    }
+
+
+} // namspace __c_arrays__
+
+
+
+#endif // !C_ARRAY_H
